@@ -1,0 +1,13 @@
+.dep/
+*.elf
+*.o[a]
+*.eep
+*.hex
+*~
+*.zip
+*.rar
+*.map
+*.sym
+*.lss
+*.lst
+*.doc
