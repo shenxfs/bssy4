@@ -1,3 +1,10 @@
+/**
+ * @brief 测量管理
+ * @author shenxf 
+ * @file measuer.c
+ * @version v1.0.0
+ * @date 2016-11-12
+ */ 
 #include "measure.h"
 #include "adc.h"
 
@@ -81,7 +88,12 @@ int16_t get_current_filt(uint8_t ch,uint8_t *q)
     return (int16_t)(sum/512L);
 }
 
-/***/
+/**
+ * @brief 电压测量
+ * @param [in]ch 电压采集通道
+ * @retval 电压值 Q=7定点数，表示范围(-256~255.9921875）V，实际电压测量范围(0~130.427V)由@var VOLCOEF决定，1023/1024*16711/128=130.427
+ * @details 
+ */
 int16_t get_voltag_filter(uint8_t ch)
 {
     uint8_t i;

@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include "uart.h"
 
+#if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
+
+#endif
+
+
 #if defined (__AVR_ATmega2560__) || defined (__AVR_ATmega1280__)||defined (__AVR_ATmega164A__) \
             || defined (__AVR_ATmega324A__)||defined (__AVR_ATmega644A__)||defined (__AVR_ATmega1284A__)
 #define USART_RX_vect USART0_RX_vect
@@ -87,13 +92,21 @@ uint8_t uart_received(void)
  *@sa uart_received() 是否已接收了数据／字符
  *@sa uart_write_times() 发送时间参数数据
  */
+#if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
 void uart_putsn_P(const __flash char str[],uint8_t n)
+#else
+void uart_putsn_P(const prog_char str[],uint8_t n)
+#endif
 {
-	uint8_t i;
+    uint8_t i;
     uint8_t ch;
     for(i = 0;i < n;i++)      
-	{
+    {
+#if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
       ch = (uint8_t)str[i];
+#else
+      ch = pgm_read_byte_near(&str[i]);
+#endif
       if('\n' == ch)
       {
         uart_send('\r');
@@ -107,7 +120,7 @@ void uart_putsn_P(const __flash char str[],uint8_t n)
       {
         uart_send(ch);
       }
-	}
+    }
 }
 
 /**
@@ -122,18 +135,22 @@ void uart_putsn_P(const __flash char str[],uint8_t n)
 */
 uint8_t uart_getchar(void)
 {
-	uint8_t ret;
-	while(uart_head == uart_end)
-	{
-		__builtin_avr_wdr();
-	}
-	ret = uart_rxbuf[uart_head];
-	uart_head++;
-	if(uart_head >= 16U)
-	{
-		uart_head = 0;
-	}
-	return ret;
+    uint8_t ret;
+    while(uart_head == uart_end)
+    {
+#if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
+        __builtin_avr_wdr();
+#else
+        __asm__ __volatile__("wdr");
+#endif
+    }
+    ret = uart_rxbuf[uart_head];
+    uart_head++;
+    if(uart_head >= 16U)
+    {
+        uart_head = 0;
+    }
+    return ret;
 }
 
 /**
@@ -149,40 +166,40 @@ uint8_t uart_getchar(void)
 */
 int8_t uart_getnum(uint8_t str[])
 {
-	int8_t ret = 0;
-	uint8_t ch;
-	str[0] = 0;
-	ch = uart_getchar();
-	while(ch != '\r')
-	{
-		if((ch >= '0')&&(ch <= '9'))
-		{
-			if(ret < 5U)
-			{
-			    str[ret] = ch;
-				ret++;
-				uart_send(ch);
-			}
-			else
-			{
-			    ret = 5U;
-			}
-		}
-		else if(0x08U == ch)
-		{
-			if(ret >0)
-			{
-				ret--;
-				uart_send(ch);
-			}
-		}
-		else
-		{
-		  break;
-		}
+    int8_t ret = 0;
+    uint8_t ch;
+    str[0] = 0;
+    ch = uart_getchar();
+    while(ch != '\r')
+    {
+        if((ch >= '0')&&(ch <= '9'))
+        {
+            if(ret < 5U)
+            {
+                str[ret] = ch;
+                ret++;
+                uart_send(ch);
+            }
+            else
+            {
+                ret = 5U;
+            }
+        }
+        else if(0x08U == ch)
+        {
+            if(ret >0)
+            {
+                ret--;
+                uart_send(ch);
+            }
+        }
+        else
+        {
+            break;
+        }
         ch = uart_getchar();
-	}
-	return ret;
+    }
+    return ret;
 }
 
 /**
@@ -191,19 +208,19 @@ int8_t uart_getnum(uint8_t str[])
 */
 void uart_init(uint32_t baud)
 {
-	uint16_t pri;
-	if(baud < 19200U)
-	{
-		pri = (uint16_t)((int16_t)(F_CPU/(16*baud)) - 1);
-	}
-	else
-	{
-		pri = (uint16_t)((int16_t)(F_CPU/(8*baud)) - 1);
-		UCSRA |= _BV(U2X);
-	}		
-	UBRRH = (uint8_t)(pri >> 8);
-	UBRRL = (uint8_t)pri;
-	UCSRB = _BV(RXEN) | _BV(TXEN) | _BV(RXCIE);
+    uint16_t pri;
+    if(baud < 19200U)
+    {
+        pri = (uint16_t)((int16_t)(F_CPU/(16*baud)) - 1);
+    }
+    else
+    {
+        pri = (uint16_t)((int16_t)(F_CPU/(8*baud)) - 1);
+        UCSRA |= _BV(U2X);
+    }
+    UBRRH = (uint8_t)(pri >> 8);
+    UBRRL = (uint8_t)pri;
+    UCSRB = _BV(RXEN) | _BV(TXEN) | _BV(RXCIE);
 #if defined (__AVR_ATmega16__) || defined (__AVR_ATmega32__)
     UCSRC = _BV(URSEL)|_BV(UCSZ1) | _BV(UCSZ0);
 #else
@@ -223,11 +240,11 @@ void uart_init(uint32_t baud)
 */
 void uart_send(uint8_t byte)
 {
-	while(_BV(UDRE) != (UCSRA & _BV(UDRE)))
-	{
-	  __builtin_avr_nop();
-	} 
-	UDR = byte;
+    while(_BV(UDRE) != (UCSRA & _BV(UDRE)))
+    {
+        __builtin_avr_nop();
+    } 
+    UDR = byte;
 }
 
 /**

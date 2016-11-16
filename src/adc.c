@@ -7,7 +7,6 @@
  */ 
 #include "adc.h"
 #include <avr/interrupt.h>
-#include <stdfix.h>
 
 #if defined (__AVR_ATmega16__) || defined (__AVR_ATmega32__)
 #define TIMER_COMP_vect TIMER0_COMP_vect
@@ -66,14 +65,19 @@ void init_adc(void)
 {
     ADCSRA = _BV(ADEN)|_BV(ADPS2)|_BV(ADPS1)|_BV(ADPS0);
 #if defined (__AVR_ATmega2560__) || defined (__AVR_ATmega1280__)
-    DIDR0 = 0xFFU;
-    DIDR1 = 0xFFU;
+    DIDR0 = 0x3FU;
+    DIDR1 = 0x00U;
     ADCSRB = 0;
+#elif defined (__AVR_ATmega164A__)|| defined (__AVR_ATmega324A__)||defined (__AVR_ATmega644A__)||defined (__AVR_ATmega1284__)
+    DIDR0 = 0x3FU;
+    ADCSRB = 0;
+#else
+    SFIOR = 0;
 #endif    
     OCR = (uint8_t)(F_CPU/976/256-1);
     TIMSK |= _BV(OCIE0);
 #if defined (__AVR_ATmega2560__) || defined (__AVR_ATmega1280__)||defined (__AVR_ATmega164A__) \
-            || defined (__AVR_ATmega324A__)||defined (__AVR_ATmega644A__)||defined (__AVR_ATmega1284A__)
+            || defined (__AVR_ATmega324A__)||defined (__AVR_ATmega644A__)||defined (__AVR_ATmega1284__)
     TCCR0A |= _BV(WGM01);
 #elif defined (__AVR_ATmega16__) || defined (__AVR_ATmega32__)
     TCCR0 |=_BV(WGM01);

@@ -1,6 +1,8 @@
 .dep/
+bin/
 *.elf
-*.o[a]
+*.o
+*.a
 *.eep
 *.hex
 *~
