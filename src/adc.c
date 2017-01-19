@@ -1,9 +1,9 @@
 /**
- *@brief
- *@file
- *@author
- *@version
- *@date 
+ *@brief ADC接口模块
+ *@file adc.c
+ *@author shenxf
+ *@version v1.0.0
+ *@date  2016-11-12
  */ 
 #include "adc.h"
 #include <avr/interrupt.h>
@@ -59,7 +59,9 @@ volatile uint8_t adc_timeout;/**<采样时间到标志*/
 void init_adc (void) __attribute__ ((naked)) __attribute__ ((section (".init1")));
 
 /**
- * @brief ADC初始化，链接“init1”段，由系统调用
+ * @brief ADC初始化
+ * 
+ * ADC初始化,链接“init1”段，由系统调用
  */
 void init_adc(void)
 {
@@ -85,9 +87,9 @@ void init_adc(void)
 }
 
 /**
- * @fn ADC转换函数
+ * @brief ADC转换函数
  * @param[in] channel
- * @retval  转换值
+ * @return  转换值
  */
 int16_t get_adc(uint8_t channel)
 {
@@ -101,20 +103,20 @@ int16_t get_adc(uint8_t channel)
         __asm__ __volatile__("nop");
     }
     ret = ADC;
-    if(tmp >= 8U && tmp < 0x1CU)
+    if(tmp >= 8U && tmp < 0x1EU)
     {
         if(0x200U == (ret & 0x200U))
         {
             ret |= 0xfC00U;
         }
     }
-    return (int16_t)ret;
+    return ret;
 }
 
 /**
  * @brief FIR数字滤波函数
- * @param [in]pd 指向FIR延迟结构
- * @param [in]xn 输入值，任意Q值(0~15)
+ * @param[in] pd 指向FIR延迟结构
+ * @param[in] xn 输入值，任意Q值(0~15)
  * @retval 滤波值 与输入相同的Q值
  * 
  *FIR数字滤波函数，差分方程y(n)=h(0)*x(n)+h(1)*x(n-1)+..+h(m)*x(n-m-1)

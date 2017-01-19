@@ -251,8 +251,7 @@ U8G_LIB =
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRALIBDIRS = lib
-
+EXTRALIBDIRS = 
 
 
 #---------------- External Memory Options ----------------
@@ -291,9 +290,17 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB) $(U8G_LIB)
 ifeq ($(MCU),atmega2560) 
 AVRDUDE_PROGRAMMER = wiring
 AVRDUDE_BAUD = 115200
+LFUSE = -U lfuse:w:0xff:m
+HFUSE = -U hfuse:w:0xd9:m
+EFUSE = -U efuse:w:0xff:m
 else
+ifeq ($(MCU),atmega16) 
 AVRDUDE_PROGRAMMER = arduino
 AVRDUDE_BAUD = 57600
+LFUSE = -U lfuse:w:0x04:m
+HFUSE = -U hfuse:w:0xd9:m
+EFUSE =
+endif 
 endif 
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
@@ -479,7 +486,7 @@ gccversion :
 
 #upload
 upload: $(OBJDIR)/$(TARGET).hex $(OBJDIR)/$(TARGET).eep
-	$(AVRDUDE) -p $(MCU) -P usb -c usbasp -e -U lock:w:0x3f:m -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m
+	$(AVRDUDE) -p $(MCU) -P usb -c usbasp -e -U lock:w:0x3f:m $(LFUSE) $(HFUSE) $(EFUSE)
 	$(AVRDUDE) -p $(MCU) -P usb -c usbasp -v $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 # Program the device.  
 program: $(OBJDIR)/$(TARGET).hex $(OBJDIR)/$(TARGET).eep

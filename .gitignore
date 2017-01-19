@@ -1,5 +1,6 @@
 .dep/
 bin/
+doc/
 *.elf
 *.o
 *.a

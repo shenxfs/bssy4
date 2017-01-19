@@ -48,7 +48,8 @@ void uart_send(uint8_t byte);
 void uart_init(uint32_t baud);
 uint8_t uart_getchar(void);
 int8_t uart_getnum(uint8_t str[]);
-void uart_putsn(char str[],uint8_t n);
+//void uart_putsn(char str[],uint8_t n);
+
 #if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
 void uart_putsn_P(const __flash char str[],uint8_t n);
 #else
@@ -57,6 +58,6 @@ void uart_putsn_P(const prog_char str[],uint8_t n);
 
 void uart_flush(void);
 uint8_t uart_received(void);
-void uart_write_times(uint32_t num);
+void uart_write_qnum(int16_t num,int8_t q);
 void uart_printnumx(uint16_t num);
 #endif

@@ -2,8 +2,8 @@
  * @brief 串口接口模块
  * @file uart.c
  * @author shenxf 380406785@qq.com
- * @version V1.1.0
- * @date 2016-10-17
+ * @version V1.0.0
+ * @date 2016-11-17
  *
  * 串口接口驱动程序，中断接收，查询发送\n
  * 函数列表：
@@ -14,16 +14,12 @@
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
  */
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include "uart.h"
-
-#if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
-
-#endif
-
 
 #if defined (__AVR_ATmega2560__) || defined (__AVR_ATmega1280__)||defined (__AVR_ATmega164A__) \
             || defined (__AVR_ATmega324A__)||defined (__AVR_ATmega644A__)||defined (__AVR_ATmega1284A__)
@@ -57,7 +53,8 @@ ISR(USART_RX_vect)
  *@sa uart_getnum()  接收数字字符串
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
  */
 void uart_flush(void)
 {
@@ -74,7 +71,8 @@ void uart_flush(void)
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
  */
 uint8_t uart_received(void)
 {
@@ -90,7 +88,8 @@ uint8_t uart_received(void)
  *@sa uart_getnum()  接收数字字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
  */
 #if __GNUC__>=5 ||(__GNUC__ == 4 && __GNUC_MINOR__>7)
 void uart_putsn_P(const __flash char str[],uint8_t n)
@@ -131,7 +130,8 @@ void uart_putsn_P(const prog_char str[],uint8_t n)
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
 */
 uint8_t uart_getchar(void)
 {
@@ -162,7 +162,8 @@ uint8_t uart_getchar(void)
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 串口打印Q定点数的实数
+ *@sa uart_uart_printnumx()十六进制显示整数
 */
 int8_t uart_getnum(uint8_t str[])
 {
@@ -236,7 +237,8 @@ void uart_init(uint32_t baud)
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
- *@sa uart_write_times() 发送时间参数数据
+ *@sa uart_write_qnum() 发送时间参数数据
+ *@sa uart_uart_printnumx()十六进制显示整数
 */
 void uart_send(uint8_t byte)
 {
@@ -248,49 +250,81 @@ void uart_send(uint8_t byte)
 }
 
 /**
- *@brief 发送时间参数数据，按“＃.####“
- *@param num 时间参数，单位0.1ms
+ *@brief 串口打印定点数的实数，字符域10个字符
+ *@param num Q定点数
+ *@param q 定标数(0~15)
  *@sa uart_send() 发送一个字符
  *@sa uart_getchar() 接收一个字符
  *@sa uart_getnum()  接收数字字符串
  *@sa uart_putsn_P() 发送FLASH的字符串
  *@sa uart_flush() 清空接收缓冲区
  *@sa uart_received() 是否已接收了数据／字符
-*/
-void uart_write_times(uint32_t num)
+ *@sa uart_uart_printnumx()十六进制显示整数
+ */
+void uart_write_qnum(int16_t num,int8_t q)
 {
-  uint8_t str[6];
-  uint8_t i,dgt;
-  uint32_t n;
-  for(i = 0;i < 6;i++)
-  {
-    str[i] = '0';
-  }
-  str[1] = '.';
-  n = num;
-  if(n < 100000UL)
-  {
-    i = 5U;
-    while(n!= 0)
+    uint8_t str[11];
+    uint8_t i,dgt;
+    int32_t rem;
+    for(i = 0;i < 11;i++)
     {
-      dgt = (uint8_t)(n % 10U);
-      str[i] += dgt;
-      n /= 10U;
-      i--;
-      if(i == 1U)
-      {
-        break;
-      }
+        str[i] = '\0';
     }
-    str[0] += (uint8_t)(n % 10U);
-    for(i =0;i < 6;i++)
+    i = 0;
+    if(num < 0)
     {
-       uart_send(str[i]);
+        num = -num;
+        str[0] = '-';
+        i = 1U;
     }
-  }
+    q &= 0x0fU;
+    rem = num % (1U<<q);
+    snprintf((char*)&str[i],10,"%d",num /(1U<<q));
+    while(str[i]!=0)
+    {
+        i++;
+    }
+    if(rem>0)
+    {
+        str[i] = '.';
+        i++;
+        while(rem != 0)
+        {
+            rem  *= 10;
+            dgt = (uint8_t)(rem /(1U<<q));
+            str[i] = dgt+0x30;
+            rem  %= (1U<<q) ;
+            i++;
+            if(i == 10U)
+            {
+                break;
+            }
+        }
+    }
+    for(i =0;i < 11;i++)
+    {
+        if(str[i] != 0)
+        {
+            uart_send(str[i]);
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
-/***/
+/**
+ * @brief 十六进制显示整数
+ * @param [in] num
+ *@sa uart_send() 发送一个字符
+ *@sa uart_getchar() 接收一个字符
+ *@sa uart_getnum()  接收数字字符串
+ *@sa uart_putsn_P() 发送FLASH的字符串
+ *@sa uart_flush() 清空接收缓冲区
+ *@sa uart_received() 是否已接收了数据／字符
+ *@sa uart_write_qnum() 发送时间参数数据
+ */
 void uart_printnumx(uint16_t num)
 {
     uint8_t ch[5],i;
